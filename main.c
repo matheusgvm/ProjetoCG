@@ -6,26 +6,23 @@
 #include <math.h>
 #include <time.h>
 
-GLuint idFundo;
+GLuint fundo = 0;
 
-GLuint carregaTextura(const char* arquivo) { //colocar fundo tela
-    GLuint idTextura = SOIL_load_OGL_texture(
+void carregaTextura(int *textura, char *arquivo) { //colocar fundo tela
+      *textura = SOIL_load_OGL_texture(
       arquivo,
       SOIL_LOAD_AUTO,
       SOIL_CREATE_NEW_ID,
       SOIL_FLAG_INVERT_Y);
 
-    if (idTextura == 0) {
+    if (textura == 0) {
         printf("Erro do SOIL: '%s'\n", SOIL_last_result());
     }
-
-    return idTextura;
 }
 
 //Variáveis globais
-GLint controleTecla = 1; //1 é quando está pressionado e 0 quando solta 
-GLfloat incrementar = 0.0003;
-GLint pressionado = 1;
+GLint controleTecla[256]; //1 é quando está pressionado e 0 quando solta 
+GLfloat incrementar = 0.3;
 /*GLint meta = ;
 GLint score = ;
 GLint tempoLevel = ; //cada fase terá 60 segundos
@@ -52,30 +49,43 @@ void parametrosIniciais(){//define parâmetros iniciais do jogo
   FundoTela.y = 0;
   FundoTela.altura = 100;
   FundoTela.largura = 100;
-  //Obstaculo.x=500;
-  //Obstaculo.y=100;
-  //Obstaculo.largura = 20;
-  //Obstaculo.altura = 30;
+  Obstaculo.x = 20;
+  Obstaculo.y = 40;
+  Obstaculo.largura = 3;
+  Obstaculo.altura = 3;
 }
 
 void moverBaseDiscoX(){ //para fazer a base do disco andar de um lado para o outro
 
-  if((BaseDisco.x + BaseDisco.largura) >= 100){ //se chegar no final do canto direito 
-    incrementar = -0.0003; //decrementa o x quando estiver indo para a esquerda
+  if(controleTecla['a']==1 || controleTecla['A']==1){ //vai para a esquerda 
+      BaseDisco.x = -1;
+      //se chegar no final do canto esquerdo
+      if(BaseDisco.x <= 0){ 
+        //não vai executar o comando que o usuário está pedindo
+        glTranslatef(BaseDisco.x, 0, 0);
+      }
+      glFlush();
   }
-  if(BaseDisco.x <= 0){ //se chegar no final do canto esquerdo
-    incrementar = 0.0003; //incrementa o x quando estiver indo para a direita
+
+  if(controleTecla['d'] || controleTecla['D']==1){ //vai para a direita 
+      BaseDisco.x = 1;
+      //se chegar no final do canto direito
+      if((BaseDisco.x + BaseDisco.largura) >= 100){ 
+        //não vai executar o comando que o usuário está pedindo
+        glTranslatef(-BaseDisco.x, 0, 0);
+      }
+      glFlush();
   }
-  BaseDisco.x = BaseDisco.x + incrementar;
+
 }
 
 void moverBaseDiscoY(){ //para fazer a base do disco ir para baixo/cima
 
   if((BaseDisco.y + BaseDisco.altura) >= 100){ //se chegar na parte de cima
-    incrementar = -0.0003; //decrementa o y quando estiver indo para a esquerda
+    incrementar = -0.3; //decrementa o y quando estiver indo para a esquerda
   }
   if(BaseDisco.y <= 0){ //se chegar no final do canto esquerdo
-    incrementar = 0.0003; //incrementa o x quando estiver indo para a direita
+    incrementar = 0.3; //incrementa o x quando estiver indo para a direita
   }
   BaseDisco.y = BaseDisco.y + incrementar;
 }
@@ -90,7 +100,7 @@ void desenhaObjeto(float x, float y, float altura, float largura){
   glEnd();
 }
 
-void desenhaDisco() { //para desenhar disco voador
+void desenhaFundo() { //textura fundo
     glClear(GL_COLOR_BUFFER_BIT);
     glColor3f (1, 1, 1);
 
@@ -98,7 +108,7 @@ void desenhaDisco() { //para desenhar disco voador
     glEnable(GL_TEXTURE_2D);
 
     // Começa a usar a textura que criamos
-    glBindTexture(GL_TEXTURE_2D, idFundo);
+    glBindTexture(GL_TEXTURE_2D, fundo);
     glBegin(GL_TRIANGLE_FAN);
         // Associamos um canto da textura para cada vértice
         // Para preencher a tela toda pensamos no tamanho da janela, coordenadas fundo
@@ -113,30 +123,32 @@ void desenhaDisco() { //para desenhar disco voador
     glutSwapBuffers(); // Diz ao OpenGL para colocar o que desenhamos na tela
 }
 
+void gerarObstaculos(){ //gera obstáculos aleatórios
+
+  
+}
+
 void desenhaCena(void){
+   
+   // Limpa a tela (com a cor definida por glClearColor(r,g,b)) para desenhar
+   glClear(GL_COLOR_BUFFER_BIT);
 
-  //desenhaDisco(); //VER ONDE ESSA FUNÇÃO VAI FICAR P DESENHAR FUNDO TELA
-  // Limpa a tela (com a cor definida por glClearColor(r,g,b)) para desenhar
-  glClear(GL_COLOR_BUFFER_BIT);
+   desenhaFundo();
 
-  // Começa a usar a cor índigo
-  //glClearColor(0.29, 0, 0.51); 
-  // Desenha um quadrado para ficar no fundo 
+  //glClearColor(255,218,185); //PeachPuff
+  //Desenha um quadrado para ficar no fundo 
   //desenhaObjeto(FundoTela.x, FundoTela.y, FundoTela.altura, FundoTela.largura);
 
-  //glClear(GL_COLOR_BUFFER_BIT);
-  glColor3f(1, 0, 1); //rosa
   // Desenha a base do disco voador de ficará movimentando de um lado para o outro
+  glColor3f(0.29, 0, 0.51); //índigo
   desenhaObjeto(BaseDisco.x, BaseDisco.y, BaseDisco.altura, BaseDisco.largura);
 
-  // Diz ao OpenGL para colocar o que desenhamos na tela
-  glFlush();
+  //Obstáculo
+  glColor3f(0, 206, 209); //DarkTurquoise
+  desenhaObjeto(Obstaculo.x, Obstaculo.y, Obstaculo.altura, Obstaculo.largura);
+  
+  glFlush(); 
 
-  /*while(1){ //vai ficar andando de um lado pro outro infinitamente
-    glTranslatef(-5, 0, 0);
-    if()
-    glutTimerFunc(atualizaCena);
-  }*/
 }
 
 // Inicia algumas variáveis de estado
@@ -147,7 +159,7 @@ void inicializa(void){
   // habilita mesclagem de cores, para termos suporte a texturas com transparência
   glEnable(GL_BLEND );
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  idFundo = carregaTextura("fundo.jpg");
+  carregaTextura(&fundo, "space.png");
 }
 
 void desenha() { //para desenhar disco voador
@@ -158,7 +170,7 @@ void desenha() { //para desenhar disco voador
     glEnable(GL_TEXTURE_2D);
 
     // Começa a usar a textura que criamos
-    glBindTexture(GL_TEXTURE_2D, idFundo);
+    glBindTexture(GL_TEXTURE_2D, fundo);
     glBegin(GL_TRIANGLE_FAN);
         // Associamos um canto da textura para cada vértice
         // Para preencher a tela toda pensamos no tamanho da janela, coordenadas fundo
@@ -176,23 +188,21 @@ void desenha() { //para desenhar disco voador
 // Callback de redimensionamento
 void redimensiona(int largura, int altura){
 
-  /*if((w/h)>=1){ //GABRIEL
-    glViewport(0, 0, h, h);
-  }else{
-    glViewport(0, 0, w, w);
-  }*/
   //It just tells which part of the window will be used for rendering(visible)
   glViewport(0, 0, largura, altura); 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   glOrtho(0, 100, 0, 100, -1, 1);
+  //glOrtho(-largura/2, largura/2, -altura/2, altura/2, -1, 1); 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 }
 
 void atualizaCena(){ // altera algo na cena
   
+  desenhaCena();
   moverBaseDiscoY();
+  moverBaseDiscoX();
   // atualiza a tela (desenha() será invocada novamente)
   glutPostRedisplay(); 
   // registra a callback novamente
@@ -201,38 +211,24 @@ void atualizaCena(){ // altera algo na cena
 }
 
 // Callback de evento de teclado
-void teclado(unsigned char key, int x, int y){ 
+void teclado(unsigned char key, int x, int y){ //quando pressiona uma das teclas
+
+  controleTecla[key] = 1;
 
   switch(key){
     case 27: // Tecla ESC
       exit(0);
-      break;
-  /*case 'a': //seta para baixo
-      if(setaBaixo == 1){
-        abduz(setaBaixo);
-        setaBaixo = 0; 
-      }else{
-        glutPostRedisplay(); //atualiza a tela (desenha() será invocada novamente)
-        setaBaixo = 1; 
-    }*/
+      break;  
+  
     default:
        break;
   }
 }
 
-void teclado2(int key, int x, int y){ 
+void soltaTecla(unsigned char key, int x, int y){ //quando solta uma das teclas
 
-  pressionado = 0;
-  if(key == GLUT_KEY_LEFT){ //seta para esquerda faz o objeto ir para esquerda
-    pressionado = -1;
-    BaseDisco.x--; //faz mover para a esquerda
-    atualizaCena(); 
-  }
-  if(key == GLUT_KEY_RIGHT){ //seta para direita faz o objeto ir para direita
-      pressionado=1;
-      BaseDisco.x++; //faz mover para a direira
-      atualizaCena(); 
-  }
+  controleTecla[key] = 0;
+  
 }
 
 // Rotina principal
@@ -258,9 +254,9 @@ int main(int argc, char **argv){
   //glutDisplayFunc(desenha); //textura fundo
   glutDisplayFunc(desenhaCena); //chama outras funções para compor a cena principal
   glutReshapeFunc(redimensiona);
-  glutIdleFunc(atualizaCena);
+  glutTimerFunc(0, atualizaCena, 0);
   glutKeyboardFunc(teclado);
-  glutSpecialFunc(teclado2);
+  glutKeyboardUpFunc(soltaTecla);
 
   inicializa();
 
