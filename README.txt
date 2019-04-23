@@ -1,4 +1,7 @@
-UAILIEN TP1 CG 2019
+TP1 CG 2019
+
+UAILIEN
+
 
 Bibliotecas necessárias para iniciar o jogo:
 -GCC(compilador)
